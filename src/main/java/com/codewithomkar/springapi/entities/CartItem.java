@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Entity
@@ -23,7 +25,10 @@ public class CartItem {
     private Product product;
 
     @Column(name = "quantity")
-    private Integer quantity;
+    private int quantity;
 
+    public BigDecimal getTotalPrice() {
+        return product.getPrice().multiply(new BigDecimal(quantity));
+    }
 
 }

@@ -4,6 +4,7 @@ import com.codewithomkar.springapi.dtos.ChangePasswordRequest;
 import com.codewithomkar.springapi.dtos.RegisterUserRequest;
 import com.codewithomkar.springapi.dtos.UpdateUserRequest;
 import com.codewithomkar.springapi.dtos.UserDto;
+import com.codewithomkar.springapi.entities.Role;
 import com.codewithomkar.springapi.entities.User;
 import com.codewithomkar.springapi.mappers.UserMapper;
 import com.codewithomkar.springapi.repositories.UserRepository;
@@ -12,6 +13,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -27,6 +29,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
 
     @GetMapping()
@@ -63,8 +66,11 @@ public class UserController {
         if (isEmailExist) {
             return ResponseEntity.badRequest().body(Map.of("email", "Email already registered. Please provide a different email address."));
         }
-        System.out.println(userMapper.toEntity(createUserRequest));
-        User user = userRepository.save(userMapper.toEntity(createUserRequest));
+//        System.out.println(userMapper.toEntity(createUserRequest));
+        var userEntity = userMapper.toEntity(createUserRequest);
+        userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
+        userEntity.setRole(Role.USER);
+        User user = userRepository.save(userEntity);
 
         var uri = uriBuilder.path("/users/{id}").buildAndExpand(user.getId()).toUri();
         return ResponseEntity.created(uri).body(userMapper.toDto(user));
