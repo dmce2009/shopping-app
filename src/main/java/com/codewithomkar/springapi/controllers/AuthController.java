@@ -6,7 +6,9 @@ import com.codewithomkar.springapi.dtos.LoginRequestDTO;
 import com.codewithomkar.springapi.dtos.UserDto;
 import com.codewithomkar.springapi.mappers.UserMapper;
 import com.codewithomkar.springapi.repositories.UserRepository;
+import com.codewithomkar.springapi.services.AuthService;
 import com.codewithomkar.springapi.services.JWTService;
+import com.codewithomkar.springapi.services.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -30,6 +32,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final JwtConfig jwtConfig;
+    private final AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<JWTResponseDTO> login(
@@ -45,8 +48,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        String accessToken = jWTService.generateAccessToken(userEntity);
-        String refreshToken = jWTService.generateRefreshToken(userEntity);
+        String accessToken = jWTService.generateAccessToken(userEntity).toString();
+        String refreshToken = jWTService.generateRefreshToken(userEntity).toString();
 
 
         Cookie cookie = new Cookie("refreshToken", refreshToken);
@@ -64,26 +67,23 @@ public class AuthController {
     public ResponseEntity<JWTResponseDTO> refresh(
             @CookieValue ("refreshToken" ) String refreshToken
     ){
-        if(!jWTService.validateToken(refreshToken)){
+        var jwt = jWTService.parseToken(refreshToken);
+        if(jwt == null || jwt.isExpired()){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        var userId = jWTService.getUserIdFromToken(refreshToken);
+        var userId = jwt.getUserId();
         var userEntity = userRepository.findById(userId).orElseThrow();
         var accessToken = jWTService.generateAccessToken(userEntity);
 
-        return ResponseEntity.ok(new JWTResponseDTO(accessToken));
+        return ResponseEntity.ok(new JWTResponseDTO(accessToken.toString()));
 
     }
 
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser(){
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        assert authentication != null;
-        Long userid = (Long) authentication.getPrincipal();
-
-        var userEntity  = userRepository.findById(userid).orElse(null);
+        var userEntity = authService.getCurrentUser();
         if(userEntity == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }

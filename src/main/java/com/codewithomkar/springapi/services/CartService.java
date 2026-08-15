@@ -10,6 +10,7 @@ import com.codewithomkar.springapi.mappers.CartMapper;
 import com.codewithomkar.springapi.repositories.CartRepository;
 import com.codewithomkar.springapi.repositories.ProductRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,7 +20,9 @@ import java.util.UUID;
 public class CartService {
 
     private final CartRepository cartRepository;
+
     private final CartMapper cartMapper;
+
     private final ProductRepository productRepository;
 
     public CartDto createCart() {
